@@ -1,5 +1,10 @@
 # from sym import H, f, simple_trigs, t, Mext1, Mext3, w1, w2, w3, w4
 
+import numpy as np
+
+class PID:
+    i1 = 0
+    i3 = 0
 
 def boat_fish_model(state, t):
     x, y = state
@@ -29,7 +34,6 @@ def double_pendulum_model(state, t):
 
 
 def single_hand_model(state, t):
-    import numpy as np
 
     print(t)
 
@@ -85,7 +89,6 @@ def single_hand_model(state, t):
 
 
 def double_hand_model(state, time):
-    import numpy as np
 
     t1, t2, t3, t4, w1, w2, w3, w4, lambda_x, lambda_y = state
     theta = np.array([t1, t2, t3, t4])
@@ -94,15 +97,20 @@ def double_hand_model(state, time):
     l1 = l2 = l3 = l4 = l = D = 0.5
     lc1 = lc2 = lc3 = lc4 = lc = l / 2
     g = 9.81
-    nu = 30
+    nu = 50
 
     x1 = y1 = y3 = 0
     x3 = D
 
     J1 = J2 = J3 = J4 = J = 1 / 12 * m * l ** 2
 
-    M1 = 400 * np.sin(30 * time)
-    M3 = 0
+    wanted1 = 3 * np.pi / 5
+    wanted3 = np.pi - 3 * np.pi / 5
+    phase = 0
+    M1 = 0 - 10 * w1 + 1000 * (wanted1 - t1) + 200 * np.sin(10 * time)
+    M3 = 0 - 10 * w3 - 1000 * (wanted3 - t3) + 200 * np.sin(10 * time + phase)
+    # M1 = 200 * np.sin(10 * time)
+    # M3 = 200 * np.sin(10 * time)
 
     C = np.cos(theta)
     C1, C2, C3, C4 = C
@@ -157,8 +165,8 @@ def double_hand_model(state, time):
     # M * d_state = b
     M = np.array([[  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
                   [  0 ,  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
-                  [  0 ,  0 ,  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
-                  [  0 ,  0 ,  0 ,  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
+                  [  0 ,  0 , -1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
+                  [  0 ,  0 ,  0 , -1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
                   [  0 ,  0 ,  0 ,  0 , H11, H12,  0 ,  0 ,-Jx1,-Jy1],
                   [  0 ,  0 ,  0 ,  0 , H21, H22,  0 ,  0 ,-Jx2,-Jy2],
                   [  0 ,  0 ,  0 ,  0 ,  0 ,  0 , H33, H34, Jx3, Jy3],
