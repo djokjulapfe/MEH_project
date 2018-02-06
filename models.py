@@ -2,9 +2,9 @@
 
 import numpy as np
 
-class PID:
-    i1 = 0
-    i3 = 0
+class Variables:
+    phase = 0
+    freq = 3.65
 
 def boat_fish_model(state, t):
     x, y = state
@@ -88,6 +88,14 @@ def single_hand_model(state, t):
     return [d_t1, d_t2, d_w1, d_w2, t1 - wanted_t1, t2 - wanted_t2]
 
 
+def heaviside(t):
+    return 1 if t > 0 else 0
+
+
+def impulse(t, duration):
+    return heaviside(t) - heaviside(t - duration)
+
+
 def double_hand_model(state, time):
 
     t1, t2, t3, t4, w1, w2, w3, w4, lambda_x, lambda_y = state
@@ -97,7 +105,7 @@ def double_hand_model(state, time):
     l1 = l2 = l3 = l4 = l = D = 0.5
     lc1 = lc2 = lc3 = lc4 = lc = l / 2
     g = 9.81
-    nu = 50
+    nu = 100
 
     x1 = y1 = y3 = 0
     x3 = D
@@ -106,11 +114,20 @@ def double_hand_model(state, time):
 
     wanted1 = 3 * np.pi / 5
     wanted3 = np.pi - 3 * np.pi / 5
-    phase = 0
-    M1 = 0 - 10 * w1 + 1000 * (wanted1 - t1) + 200 * np.sin(10 * time)
-    M3 = 0 - 10 * w3 - 1000 * (wanted3 - t3) + 200 * np.sin(10 * time + phase)
-    # M1 = 200 * np.sin(10 * time)
-    # M3 = 200 * np.sin(10 * time)
+    phase = Variables.phase
+
+    freq = Variables.freq # Hz
+    omega = 2 * np.pi * freq
+    ampl = 100
+
+    # M1 = 0 - 10 * w1 + 1000 * (wanted1 - t1) + ampl * np.sin(omega * time) + 100
+    # M3 = 0 - 10 * w3 - 1000 * (wanted3 - t3) + ampl * np.sin(omega * time + phase)
+    # M1 = 0 - 10 * w1 + 1000 * (wanted1 - t1) + 100 * impulse(time, 0.1)
+    # M3 = 0 - 10 * w3 - 1000 * (wanted3 - t3) - 100 * impulse(time, 0.1)
+    # M1 = 100 * np.sin(40 * time)
+    # M3 = 100 * np.sin(40 * time)
+    M1 = 0
+    M3 = 0
 
     C = np.cos(theta)
     C1, C2, C3, C4 = C
