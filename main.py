@@ -7,11 +7,11 @@ from scipy.integrate import odeint
 
 import models
 
-t = np.arange(0, 10, 0.001)
+t = np.arange(0, 10, 0.01)
 angPentagon = 3 * math.pi / 5
 regular_pentagon_state = [angPentagon, - math.pi + angPentagon, math.pi - angPentagon, math.pi - angPentagon, 0, 0, 0, 0, 0, 0]
 inverted_pentagon_state = [-angPentagon, math.pi - angPentagon, -math.pi + angPentagon, - math.pi + angPentagon, 0, 0, 0, 0, 0, 0]
-stable_state = [0.5, -1, -0.5, 1, 0, 0, 0, 0, 0, 0]
+stable_state = [-math.atan2(4, 1), 0, - math.pi + math.atan2(4, 1), 0, 0, 0, 0, 0, 0, 0]
 
 
 def get_freq(signal, freq, sample_rate):
@@ -87,7 +87,7 @@ def animate_system(state):
 
     ani = animation.FuncAnimation(fig, animate, frames=len(state), interval=1000 / 60, blit=True, init_func=init)
 
-    # ani.save("anim.mp4", fps = 60, extra_args=['-vcodec', 'libx264'])
+    ani.save("anim.mp4", fps = 60, extra_args=['-vcodec', 'libx264'])
 
     plt.show()
 
@@ -241,7 +241,7 @@ models.Variables.phase = np.pi
 
 # plot_angles()
 # models.Variables.freq = 3
-# play_animation()
+play_animation()
 # plot5()
 # plot_x_and_y()
-freqsweep(2, 10)
+# freqsweep(2, 10)
