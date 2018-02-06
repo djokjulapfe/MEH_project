@@ -118,16 +118,42 @@ def double_hand_model(state, time):
 
     freq = Variables.freq # Hz
     omega = 2 * np.pi * freq
-    ampl = 100
+    ampl = 80
 
-    # M1 = 0 - 10 * w1 + 1000 * (wanted1 - t1) + ampl * np.sin(omega * time) + 100
-    # M3 = 0 - 10 * w3 - 1000 * (wanted3 - t3) + ampl * np.sin(omega * time + phase)
+    # M1 = 0 - 10 * w1 + 100 * (wanted1 - t1) + ampl * np.sin(omega * time)
+    # M3 = 0 - 10 * w3 + 100 * (wanted3 - t3) + ampl * np.sin(omega * time + phase)
     # M1 = 0 - 10 * w1 + 1000 * (wanted1 - t1) + 100 * impulse(time, 0.1)
     # M3 = 0 - 10 * w3 - 1000 * (wanted3 - t3) - 100 * impulse(time, 0.1)
-    # M1 = 100 * np.sin(40 * time)
-    # M3 = 100 * np.sin(40 * time)
-    M1 = 0
-    M3 = 0
+    # M1 = ampl * np.sin(omega * time)
+    # M3 = ampl * np.sin(omega * time + phase)
+    # M1 = 0 - 10 * w1
+    # M3 = 0 - 10 * w3
+
+    # Moments used in the report
+
+    # T0S0PD0
+    # M1 = 0
+    # M3 = 0
+
+    # T0S10PD0
+    # M1 = ampl * np.sin(omega * time)
+    # M3 = ampl * np.sin(omega * time)
+
+    # T4S0PD0
+    # M1 = - 4 * w1
+    # M3 = - 4 * w3
+
+    # T0S0PD1
+    # M1 = 0 - 3 * w1 + 100 * (wanted1 - t1)
+    # M3 = 0 - 3 * w3 + 100 * (wanted3 - t3)
+
+    # T0S10PD1
+    # M1 = 0 - 3 * w1 + 100 * (wanted1 - t1) + ampl * np.sin(omega * time)
+    # M3 = 0 - 3 * w3 + 100 * (wanted3 - t3) + ampl * np.sin(omega * time)
+
+    # T0S-10PD1
+    M1 = 0 - 10 * w1 + 100 * (wanted1 - t1) + ampl * np.sin(omega * time) * heaviside(time - 3)
+    M3 = 0 - 10 * w3 + 100 * (wanted3 - t3) - ampl * np.sin(omega * time) * heaviside(time - 3)
 
     C = np.cos(theta)
     C1, C2, C3, C4 = C
@@ -142,24 +168,24 @@ def double_hand_model(state, time):
     H22 = J2 + m2 * lc2 ** 2
     H12 = H21 = J2 + m2 * (lc2 ** 2 + l1 * lc2 * C2)
     h12 = m2 * l1 * lc2 * S2
-    G1 = (m1 * lc1 ** 2 + m2 * l1) * g * C1
+    G1 = (m1 * lc1 + m2 * l1) * g * C1
     G12 = m2 * lc2 * g * C12
 
     H33 = J3 + m3 * lc3 ** 2 + J4 + m4 * (l3 ** 2 + lc4 ** 2 + 2 * l3 * lc4 * C4)
     H44 = J4 + m4 * lc4 ** 2
     H34 = H43 = J4 + m4 * (lc4 ** 2 + l3 * lc4 * C4)
-    h34 = m4 * l3 * lc4 * S[3]
-    G3 = (m3 * lc3 ** 2 + m4 * l3) * g * C2
+    h34 = m4 * l3 * lc4 * S4
+    G3 = (m3 * lc3 + m4 * l3) * g * C3
     G34 = m4 * lc4 * g * C34
 
     Jx1 = -l1 * S1 - l2 * S12
     Jy1 = l1 * C1 + l2 * C12
     Jx2 = - l2 * S12
     Jy2 = l2 * C12
-    Jx3 = l3 * S3 + l4 * S34
-    Jy3 = - l3 * C3 - l4 * C34
-    Jx4 = l4 * S34
-    Jy4 = - l4 * C34
+    Jx3 = - l3 * S3 - l4 * S34
+    Jy3 = l3 * C3 + l4 * C34
+    Jx4 = - l4 * S34
+    Jy4 = l4 * C34
 
     f1 = h12 * w2 ** 2 + 2 * h12 * w1 * w2 - G1 - G12 + M1
     f2 = -h12 * w1 ** 2 - G12
@@ -182,8 +208,8 @@ def double_hand_model(state, time):
     # M * d_state = b
     M = np.array([[  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
                   [  0 ,  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
-                  [  0 ,  0 , -1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
-                  [  0 ,  0 ,  0 , -1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
+                  [  0 ,  0 ,  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
+                  [  0 ,  0 ,  0 ,  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ],
                   [  0 ,  0 ,  0 ,  0 , H11, H12,  0 ,  0 ,-Jx1,-Jy1],
                   [  0 ,  0 ,  0 ,  0 , H21, H22,  0 ,  0 ,-Jx2,-Jy2],
                   [  0 ,  0 ,  0 ,  0 ,  0 ,  0 , H33, H34, Jx3, Jy3],

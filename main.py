@@ -7,10 +7,11 @@ from scipy.integrate import odeint
 
 import models
 
-t = np.arange(0, 10, 0.01)
+t = np.arange(0, 10, 0.001)
 angPentagon = 3 * math.pi / 5
 regular_pentagon_state = [angPentagon, - math.pi + angPentagon, math.pi - angPentagon, math.pi - angPentagon, 0, 0, 0, 0, 0, 0]
 inverted_pentagon_state = [-angPentagon, math.pi - angPentagon, -math.pi + angPentagon, - math.pi + angPentagon, 0, 0, 0, 0, 0, 0]
+stable_state = [0.5, -1, -0.5, 1, 0, 0, 0, 0, 0, 0]
 
 
 def get_freq(signal, freq, sample_rate):
@@ -26,7 +27,7 @@ def get_freq(signal, freq, sample_rate):
 
 
 def simulate():
-    init_state = inverted_pentagon_state
+    init_state = regular_pentagon_state
     # init_state = [2, 1]
 
     models.curr_model = models.double_hand_model
@@ -86,14 +87,12 @@ def animate_system(state):
 
     ani = animation.FuncAnimation(fig, animate, frames=len(state), interval=1000 / 60, blit=True, init_func=init)
 
-    ani.save("anim.mp4", fps = 60, extra_args=['-vcodec', 'libx264'])
+    # ani.save("anim.mp4", fps = 60, extra_args=['-vcodec', 'libx264'])
 
     plt.show()
 
 
-def plot5(phase):
-
-    models.Variables.phase = phase
+def plot5():
 
     simulation_state = simulate()
 
@@ -107,15 +106,41 @@ def plot5(phase):
 
     five = np.array(positions)[:, 3]
 
-    plt.xlim(0, 0.5)
-    plt.ylim(0, 1)
-    plt.plot(five[:, 0], five[:, 1])
-    plt.show()
+    plt.xlim(-0.5, 1)
+    plt.ylim(-1, 1)
+    plt.plot(five[:, 0], five[:, 1], label = 'joint #5')
+    plt.savefig('plotXY.png')
+    plt.clf()
+    # plt.show()
 
 
-def play_animation(phase):
+def plot_x_and_y():
 
-    models.Variables.phase = phase
+    simulation_state = simulate()
+
+    l = D = 0.5
+    positions = [[[0, 0],
+                  [l * math.cos(t1), l * math.sin(t1)],
+                  [l * math.cos(t1) + l * math.cos(t1 + t2), l * math.sin(t1) + l * math.sin(t1 + t2)],
+                  [D + l * math.cos(t3) + l * math.cos(t3 + t4), l * math.sin(t3) + l * math.sin(t3 + t4)],
+                  [D + l * math.cos(t3), l * math.sin(t3)],
+                  [D, 0]] for t1, t2, t3, t4 in simulation_state[:, :4]]
+
+    five = np.array(positions)[:, 3]
+
+    plt.ylim(-1, 1)
+    p1, = plt.plot(t, five[:, 0], label = 'x')
+    p2, = plt.plot(t, five[:, 1], label = 'y')
+    plt.legend(handles = [p1, p2])
+    plt.xlabel('t[s]')
+    plt.ylabel('a[m]')
+    plt.grid()
+    plt.xlim(0, t.max())
+    plt.savefig('plot(t).png')
+    # plt.show()
+
+
+def play_animation():
 
     simulation_state = simulate()
 
@@ -166,19 +191,19 @@ def saveRange(N):
 
 def plot_angles():
 
-    init_state = np.array(regular_pentagon_state)
+    init_state = np.array(inverted_pentagon_state)
 
     simulation_state = simulate()
     simulation_state = np.array([ss - init_state for ss in simulation_state])
 
-    for f in np.arange(3.5, 3.71, 0.01):
-
-        models.Variables.freq = f
-
-        simulation_state = simulate()
-        simulation_state = np.array([ss - init_state for ss in simulation_state])
-
-        print(f, get_freq(simulation_state[:, 0], models.Variables.freq, 100))
+    # for f in np.arange(3.5, 3.71, 0.01):
+    #
+    #     models.Variables.freq = f
+    #
+    #     simulation_state = simulate()
+    #     simulation_state = np.array([ss - init_state for ss in simulation_state])
+    #
+    #     print(f, get_freq(simulation_state[:, 0], models.Variables.freq, 100))
 
 
     p1, = plt.plot(t, simulation_state[:, 0], label='theta 1')
@@ -190,9 +215,33 @@ def plot_angles():
     plt.show()
 
 
-models.Variables.freq = 3.67
+def freqsweep(start, end, logarithmic=True):
+    freq = np.logspace(np.log10(start), np.log10(end), num=100)
+
+    vals = []
+
+    for f in freq:
+
+        print(f)
+
+        models.Variables.freq = f
+        simulation_state = simulate()
+
+        vals.append(get_freq(simulation_state[5000:, 0], f, 1000))
+
+    plt.semilogx(freq, vals)
+    plt.xlabel('freq[Hz]')
+    plt.ylabel('A[rad]')
+    plt.savefig('freqsweep.png')
+    plt.show()
+
+
+models.Variables.freq = 4
 models.Variables.phase = np.pi
 
 # plot_angles()
-play_animation(0)
-# plot5(0)
+# models.Variables.freq = 3
+# play_animation()
+# plot5()
+# plot_x_and_y()
+freqsweep(2, 10)
